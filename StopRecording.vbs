@@ -10,7 +10,7 @@ Dim objWMIService, colProcesses, objProcess
 Dim intResponse
 strComputer = "."
 On Error Resume Next
-intResponse = MsgBox("È·¶¨Òª½áÊøËùÓĞºóÌ¨Ö±²¥Â¼ÖÆ½ø³ÌÂğ£¿", vbYesNo + vbQuestion, "È·ÈÏ½áÊø½ø³Ì")
+intResponse = MsgBox("ç¡®å®šè¦ç»“æŸæ‰€æœ‰åå°ç›´æ’­å½•åˆ¶è¿›ç¨‹å—ï¼Ÿ", vbYesNo + vbQuestion, "ç¡®è®¤ç»“æŸè¿›ç¨‹")
 
 If intResponse = vbYes Then
     Set objWMIService = GetObject("winmgmts:\\" & strComputer & "\root\cimv2")
@@ -27,7 +27,7 @@ If intResponse = vbYes Then
 
     If Not objWMIService Is Nothing And Not colProcesses Is Nothing  And Not colProcesses2 Is Nothing Then
         If colProcesses2.Count = 0 And colProcesses3.Count = 0 Then
-            MsgBox "Ã»ÓĞÕÒµ½Â¼ÖÆ³ÌĞòµÄ½ø³Ì", vbExclamation, "ÌáÊ¾ĞÅÏ¢"
+            MsgBox "æ²¡æœ‰æ‰¾åˆ°å½•åˆ¶ç¨‹åºçš„è¿›ç¨‹", vbExclamation, "æç¤ºä¿¡æ¯"
             WScript.Quit(1)
         Else
             For Each objProcess in colProcesses
@@ -35,13 +35,13 @@ If intResponse = vbYes Then
                 If Err.Number <> 0 Then
                     objShell.Run "taskkill /f /im " & objProcess.Name, 0, True
                     Err.Clear
-                End If                
+                End If
             Next
         End If
     Else
         objShell.Run "taskkill /f /im " & objProcess.Name, 0, True
     End If
-    MsgBox "ÒÑ³É¹¦½áÊøÕıÔÚÂ¼ÖÆÖ±²¥µÄ½ø³Ì£¡" & vbCrLf & "¹Ø±Õ´Ë´°¿Ú30Ãëºó×Ô¶¯Í£Ö¹Â¼ÖÆ³ÌĞò", vbInformation, "ÌáÊ¾ĞÅÏ¢"
+    MsgBox "å·²æˆåŠŸç»“æŸæ­£åœ¨å½•åˆ¶ç›´æ’­çš„è¿›ç¨‹ï¼" & vbCrLf & "å…³é—­æ­¤çª—å£30ç§’åè‡ªåŠ¨åœæ­¢å½•åˆ¶ç¨‹åº", vbInformation, "æç¤ºä¿¡æ¯"
 
     WScript.Sleep 10000
     If colProcesses3.Count <> 0 Then
@@ -54,10 +54,10 @@ If intResponse = vbYes Then
         If Err.Number <> 0 Then
             objShell.Run "taskkill /f /im " & objProcess.Name, 0, True
             Err.Clear
-        End If         
+        End If
     Next
 Else
-    MsgBox "ÒÑÈ¡Ïû½áÊøÂ¼ÖÆ²Ù×÷", vbExclamation, "ÌáÊ¾ĞÅÏ¢"
+    MsgBox "å·²å–æ¶ˆç»“æŸå½•åˆ¶æ“ä½œ", vbExclamation, "æç¤ºä¿¡æ¯"
 End If
 
 On Error GoTo 0

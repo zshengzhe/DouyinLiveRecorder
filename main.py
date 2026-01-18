@@ -13,6 +13,7 @@ import os
 import sys
 import builtins
 import subprocess
+import multiprocessing
 import signal
 import threading
 import time
@@ -37,6 +38,11 @@ from msg_push import (
 from ffmpeg_install import (
     check_ffmpeg, ffmpeg_path, current_env_path
 )
+
+if __name__ == "__main__":
+    multiprocessing.freeze_support()
+else:
+    sys.exit(0)
 
 version = "v4.0.7"
 platforms = ("\n国内站点：抖音|快手|虎牙|斗鱼|YY|B站|小红书|bigo|blued|网易CC|千度热播|猫耳FM|Look|TwitCasting|百度|微博|"
