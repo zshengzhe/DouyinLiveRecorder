@@ -106,10 +106,6 @@ else
   mkdir -p "$APP_DIR/backup_config"
 fi
 
-if [[ -f "$ROOT/index.html" ]]; then
-  cp "$ROOT/index.html" "$APP_DIR/"
-fi
-
 if [[ -f "$ROOT/README.md" ]]; then
   cp "$ROOT/README.md" "$APP_DIR/"
 fi

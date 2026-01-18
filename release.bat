@@ -1,5 +1,5 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 
 if not "%~1"=="" (
   echo This script does not accept arguments.
@@ -10,29 +10,55 @@ set "ROOT=%~dp0"
 if "%ROOT:~-1%"=="\" set "ROOT=%ROOT:~0,-1%"
 set "APP_NAME=DouyinLiveRecorder"
 
-set "PYTHON_BIN="
-where python >nul 2>nul && set "PYTHON_BIN=python"
-if not defined PYTHON_BIN (
-  where py >nul 2>nul && set "PYTHON_BIN=py -3"
+if not exist "%ROOT%\main.py" (
+  echo main.py not found: %ROOT%\main.py
+  exit /b 1
 )
-if not defined PYTHON_BIN (
+
+set "PYTHON_EXE="
+set "PYTHON_ARGS="
+where python >nul 2>nul && set "PYTHON_EXE=python"
+if not defined PYTHON_EXE (
+  where py >nul 2>nul && set "PYTHON_EXE=py" && set "PYTHON_ARGS=-3"
+)
+if not defined PYTHON_EXE (
   echo Python not found in PATH.
   exit /b 1
 )
 
+set "POWERSHELL_EXE=%SystemRoot%\System32\WindowsPowerShell\v1.0\powershell.exe"
+if not exist "%POWERSHELL_EXE%" (
+  set "POWERSHELL_EXE="
+  where powershell >nul 2>nul && set "POWERSHELL_EXE=powershell"
+  if not defined POWERSHELL_EXE (
+    where pwsh >nul 2>nul && set "POWERSHELL_EXE=pwsh"
+  )
+)
+if not defined POWERSHELL_EXE (
+  echo PowerShell not found in PATH.
+  exit /b 1
+)
+
 set "VERSION="
-set "VERSION_FILE=%TEMP%\dlr_version.txt"
-%PYTHON_BIN% -c "import pathlib, re; text=pathlib.Path(r'%ROOT%\main.py').read_text(encoding='utf-8'); m=re.search(r'^version\\s*=\\s*[\"\\\']([^\"\\\']+)[\"\\\']', text, re.M); print(m.group(1) if m else '')" > "%VERSION_FILE%"
-set /p VERSION=<"%VERSION_FILE%"
-del "%VERSION_FILE%" >nul 2>nul
+for /f "usebackq tokens=1,* delims==" %%A in ("%ROOT%\main.py") do (
+  if not defined VERSION (
+    set "VERSION_KEY=%%A"
+    set "VERSION_KEY=!VERSION_KEY: =!"
+    if /i "!VERSION_KEY!"=="version" set "VERSION=%%B"
+  )
+)
+if defined VERSION (
+  set "VERSION=%VERSION: =%"
+  set "VERSION=%VERSION:"=%"
+)
 if not defined VERSION (
   echo version not found in main.py
   exit /b 1
 )
 
-call %PYTHON_BIN% -m PyInstaller --version >nul 2>nul
+call "%PYTHON_EXE%" %PYTHON_ARGS% -m PyInstaller --version >nul 2>nul
 if errorlevel 1 (
-  echo PyInstaller not installed. Run: %PYTHON_BIN% -m pip install pyinstaller
+  echo PyInstaller not installed. Run: %PYTHON_EXE% %PYTHON_ARGS% -m pip install pyinstaller
   exit /b 1
 )
 
@@ -43,7 +69,7 @@ set "SPEC_ROOT=%BUILD_ROOT%\spec"
 set "DATA_I18N=%ROOT%\i18n"
 set "DATA_JS=%ROOT%\src\javascript"
 
-call %PYTHON_BIN% -m PyInstaller ^
+call "%PYTHON_EXE%" %PYTHON_ARGS% -m PyInstaller ^
   --noconfirm ^
   --clean ^
   --name "%APP_NAME%" ^
@@ -71,7 +97,6 @@ if exist "%ROOT%\backup_config" (
   if not exist "%APP_DIR%\backup_config" mkdir "%APP_DIR%\backup_config"
 )
 
-if exist "%ROOT%\index.html" copy /y "%ROOT%\index.html" "%APP_DIR%\" >nul
 if exist "%ROOT%\README.md" copy /y "%ROOT%\README.md" "%APP_DIR%\" >nul
 if exist "%ROOT%\StopRecording.vbs" copy /y "%ROOT%\StopRecording.vbs" "%APP_DIR%\" >nul
 
@@ -104,7 +129,7 @@ set "RELEASE_DIR=%ROOT%\release"
 set "ZIP_PATH=%RELEASE_DIR%\%OUTPUT_NAME%.zip"
 if not exist "%RELEASE_DIR%" mkdir "%RELEASE_DIR%"
 
-powershell -NoProfile -Command "Compress-Archive -Path \"%OUTPUT_DIR%\" -DestinationPath \"%ZIP_PATH%\" -Force"
+call "%POWERSHELL_EXE%" -NoProfile -Command "Compress-Archive -Path \"%OUTPUT_DIR%\" -DestinationPath \"%ZIP_PATH%\" -Force"
 if errorlevel 1 (
   echo Failed to create zip: %ZIP_PATH%
   exit /b 1
