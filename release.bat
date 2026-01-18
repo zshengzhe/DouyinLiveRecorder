@@ -20,7 +20,11 @@ if not defined PYTHON_BIN (
   exit /b 1
 )
 
-for /f "delims=" %%V in ('%PYTHON_BIN% -c "import os, pathlib, re; root=os.environ.get('ROOT', ''); text=pathlib.Path(root, 'main.py').read_text(encoding='utf-8'); m=re.search('version\\s*=\\s*[\"\']([^\"\']+)[\"\']', text); print(m.group(1) if m else '')"') do set "VERSION=%%V"
+set "VERSION="
+set "VERSION_FILE=%TEMP%\dlr_version.txt"
+%PYTHON_BIN% -c "import pathlib, re; text=pathlib.Path(r'%ROOT%\main.py').read_text(encoding='utf-8'); m=re.search(r'^version\\s*=\\s*[\"\\\']([^\"\\\']+)[\"\\\']', text, re.M); print(m.group(1) if m else '')" > "%VERSION_FILE%"
+set /p VERSION=<"%VERSION_FILE%"
+del "%VERSION_FILE%" >nul 2>nul
 if not defined VERSION (
   echo version not found in main.py
   exit /b 1
