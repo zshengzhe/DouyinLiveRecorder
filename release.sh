@@ -15,44 +15,27 @@ if [[ $# -ne 0 ]]; then
 fi
 
 OS_NAME="$(uname -s)"
-case "$OS_NAME" in
-  Darwin)
-    HOST_OS="mac"
-    ;;
-  Linux)
-    HOST_OS="linux"
-    ;;
-  MINGW*|MSYS*|CYGWIN*)
-    HOST_OS="win"
-    ;;
-  *)
-    HOST_OS="unknown"
-    ;;
-esac
+if [[ "$OS_NAME" != "Darwin" ]]; then
+  echo "Unsupported host OS for release packaging: $OS_NAME" >&2
+  echo "release.sh only supports macOS." >&2
+  exit 1
+fi
 
 TARGET=""
 ZIP_SUFFIX=""
 TARGET_ARCH=""
 
-if [[ "$HOST_OS" == "mac" ]]; then
-  ARCH="$(uname -m)"
-  if [[ "$ARCH" == "x86_64" ]]; then
-    TARGET="mac64"
-    ZIP_SUFFIX="mac_64"
-    TARGET_ARCH="x86_64"
-  elif [[ "$ARCH" == "arm64" ]]; then
-    TARGET="mac"
-    ZIP_SUFFIX="mac"
-    TARGET_ARCH="arm64"
-  else
-    echo "Unsupported macOS architecture: $ARCH" >&2
-    exit 1
-  fi
-elif [[ "$HOST_OS" == "win" ]]; then
-  TARGET="win"
-  ZIP_SUFFIX="win"
+ARCH="$(uname -m)"
+if [[ "$ARCH" == "x86_64" ]]; then
+  TARGET="mac64"
+  ZIP_SUFFIX="mac_64"
+  TARGET_ARCH="x86_64"
+elif [[ "$ARCH" == "arm64" ]]; then
+  TARGET="mac"
+  ZIP_SUFFIX="mac"
+  TARGET_ARCH="arm64"
 else
-  echo "Unsupported host OS for release packaging: $OS_NAME" >&2
+  echo "Unsupported macOS architecture: $ARCH" >&2
   exit 1
 fi
 
@@ -77,9 +60,6 @@ if ! "$PYTHON_BIN" -m PyInstaller --version >/dev/null 2>&1; then
 fi
 
 DATA_SEP=":"
-if [[ "$HOST_OS" == "win" ]]; then
-  DATA_SEP=";"
-fi
 
 DIST_ROOT="$ROOT/dist/${TARGET}"
 BUILD_ROOT="$ROOT/build/${TARGET}"
@@ -134,26 +114,16 @@ if [[ -f "$ROOT/README.md" ]]; then
   cp "$ROOT/README.md" "$APP_DIR/"
 fi
 
-if [[ "$TARGET" == "win" && -f "$ROOT/StopRecording.vbs" ]]; then
-  cp "$ROOT/StopRecording.vbs" "$APP_DIR/"
+if [[ -f "$ROOT/StopRecording.sh" ]]; then
+  cp "$ROOT/StopRecording.sh" "$APP_DIR/"
+  chmod +x "$APP_DIR/StopRecording.sh"
+fi
+if [[ -f "$ROOT/StopRecording.command" ]]; then
+  cp "$ROOT/StopRecording.command" "$APP_DIR/"
+  chmod +x "$APP_DIR/StopRecording.command"
 fi
 
-if [[ "$TARGET" != "win" ]]; then
-  if [[ -f "$ROOT/StopRecording.sh" ]]; then
-    cp "$ROOT/StopRecording.sh" "$APP_DIR/"
-    chmod +x "$APP_DIR/StopRecording.sh"
-  fi
-  if [[ -f "$ROOT/StopRecording.command" ]]; then
-    cp "$ROOT/StopRecording.command" "$APP_DIR/"
-    chmod +x "$APP_DIR/StopRecording.command"
-  fi
-fi
-
-if [[ "$TARGET" == "win" ]]; then
-  DEPS_ROOT="$ROOT/packaging/deps/win"
-else
-  DEPS_ROOT="$ROOT/packaging/deps/mac"
-fi
+DEPS_ROOT="$ROOT/packaging/deps/mac"
 FFMPEG_SRC="$DEPS_ROOT/ffmpeg"
 EXTRAS_SRC="$DEPS_ROOT/extras"
 
@@ -167,11 +137,7 @@ if [[ -d "$EXTRAS_SRC" ]]; then
   cp -R "$EXTRAS_SRC/." "$APP_DIR/"
 fi
 
-if [[ "$TARGET" == "win" ]]; then
-  rm -f "$APP_DIR/StopRecording.sh" "$APP_DIR/StopRecording.command"
-else
-  rm -f "$APP_DIR/StopRecording.vbs"
-fi
+rm -f "$APP_DIR/StopRecording.vbs"
 
 OUTPUT_NAME="${APP_NAME}_${ZIP_SUFFIX}_${VERSION}"
 OUTPUT_DIR="$DIST_ROOT/$OUTPUT_NAME"
